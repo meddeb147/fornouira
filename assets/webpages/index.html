@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>reCAPTCHA</title>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <style>
+      body {
+        background-color: aqua;
+        background-image: url("../image/backg1.gif");
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+      }
+
+      .g-recaptcha {
+        transform: scale(
+          2.5
+        ); /* Adjust the scale factor to make the button bigger */
+      }
+    </style>
+  </head>
+
+  <body>
+    <form action="?" method="POST">
+      <div
+        class="g-recaptcha"
+        data-sitekey="6LcTp1ImAAAAAKnQn4NOiSetG6mb2GRx1x0qJrMY"
+        data-callback="captchaCallback"
+      ></div>
+    </form>
+
+    <script>
+      function captchaCallback(response) {
+        if (typeof Captcha !== "undefined") {
+          Captcha.postMessage(response);
+        }
+      }
+    </script>
+  </body>
+</html>
