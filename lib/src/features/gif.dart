@@ -1,5 +1,7 @@
 import 'dart:io';
-
+import 'package:image_picker/image_picker.dart';
+import 'package:video_player/video_player.dart';
+import 'package:chewie/chewie.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -15,68 +17,45 @@ class GifPage extends StatefulWidget {
 }
 
 class _GifPageState extends State<GifPage> {
-  CameraController? _cameraController;
-  late Future<void> _initializeCameraControllerFuture;
-  bool _isRecording = false;
+
+  
   File? _file;
+VideoPlayerController? _videoController;
 
-  @override
-  void initState() {
-    super.initState();
-    _initializeCamera();
-  }
 
-  Future<void> _initializeCamera() async {
-    final cameras = await availableCameras();
-    final camera = cameras.first;
+   Future _openCamera() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.getVideo(source: ImageSource.camera);
 
-    _cameraController = CameraController(
-      camera,
-      ResolutionPreset.medium,
-    );
+    setState(() {
+      if (pickedFile != null) {
+        _videoController = VideoPlayerController.file(File(pickedFile.path))
+          ..initialize().then((_) {
+            _videoController!.play();
+          });
+      } else {
+        print('No video selected.');
+      }
+    });
 
-    _initializeCameraControllerFuture = _cameraController!.initialize();
-  }
-Future<void> _recordVideo() async {
-  if (!_isRecording) {
-    try {
-      final appDir = await getTemporaryDirectory();
-      final videoPath = '${appDir.path}/recorded_video.mp4';
-
-      await _initializeCameraControllerFuture;
-
-      await _cameraController!.startVideoRecording();
-      setState(() {
-        _isRecording = true;
-      });
-
-      await Future.delayed(Duration(seconds: 10)); // Change the duration as needed
-
-      await _cameraController!.stopVideoRecording();
-      setState(() {
-        _isRecording = false;
-      });
-
-      _file = File(videoPath);
-
+    // Navigate to TrimmerPage after recording is done
+    if (pickedFile != null) {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => TrimmerView(file: _file!),
+          builder: (context) => TrimmerView(file: File(pickedFile.path)),
         ),
       );
-    } catch (e) {
-      print('Error recording video: $e');
     }
   }
-}
 
-
+  
   @override
   void dispose() {
-    _cameraController?.dispose();
+    _videoController?.dispose();
     super.dispose();
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -150,9 +129,7 @@ Future<void> _recordVideo() async {
                           borderRadius: BorderRadius.circular(10.0),
                         ),
                         child: ElevatedButton(
-                          onPressed: () async {
-                            await _recordVideo();
-                          },
+                          onPressed:_openCamera,
                           style: ElevatedButton.styleFrom(
                             primary: Colors.black,
                             elevation: 0.0,
@@ -171,6 +148,8 @@ Future<void> _recordVideo() async {
                         ),
                       ),
                     ),
+                     
+
                   ],
                 ),
               ),

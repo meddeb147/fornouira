@@ -85,9 +85,10 @@ class HomePage extends StatelessWidget {
 }
 
 class TrimmerView extends StatefulWidget {
-  final File file;
+  final File? file;
+  
 
-  TrimmerView({required this.file});
+  TrimmerView({this.file});
 
   @override
   _TrimmerViewState createState() => _TrimmerViewState();
@@ -108,7 +109,7 @@ class _TrimmerViewState extends State<TrimmerView> {
   }
 
   void _loadVideo() async {
-    await _trimmer.loadVideo(videoFile: widget.file);
+    await _trimmer.loadVideo(videoFile: widget.file!);
     setState(() {});
   }
 
