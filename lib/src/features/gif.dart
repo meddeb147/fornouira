@@ -1,15 +1,12 @@
 import 'dart:io';
-import 'package:image_picker/image_picker.dart';
-import 'package:video_player/video_player.dart';
-import 'package:chewie/chewie.dart';
-import 'package:camera/camera.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:video_player/video_player.dart';
 
 import 'home_page.dart';
-
-
+import 'trimmer.dart';
 
 class GifPage extends StatefulWidget {
   @override
@@ -17,45 +14,81 @@ class GifPage extends StatefulWidget {
 }
 
 class _GifPageState extends State<GifPage> {
-
-  
   File? _file;
-VideoPlayerController? _videoController;
+  VideoPlayerController? _videoController;
 
-
-   Future _openCamera() async {
+  Future<void> _openCamera() async {
     final picker = ImagePicker();
-    final pickedFile = await picker.getVideo(source: ImageSource.camera);
+    late final XFile pickedFile;
 
-    setState(() {
-      if (pickedFile != null) {
-        _videoController = VideoPlayerController.file(File(pickedFile.path))
+    if (kIsWeb) {
+      // Web platform
+      pickedFile = (await picker.pickVideo(source: ImageSource.gallery))!;
+    } else if (Platform.isIOS) {
+      // iOS platform
+      pickedFile = (await picker.pickVideo(source: ImageSource.camera))!;
+    } else {
+      // Android platform
+      pickedFile = (await picker.pickVideo(source: ImageSource.camera))!;
+    }
+
+    if (pickedFile != null) {
+      final videoPath = pickedFile.path;
+      setState(() {
+        _videoController = VideoPlayerController.file(File(videoPath))
           ..initialize().then((_) {
             _videoController!.play();
           });
-      } else {
-        print('No video selected.');
-      }
-    });
+      });
 
-    // Navigate to TrimmerPage after recording is done
-    if (pickedFile != null) {
+      // Navigate to TrimmerPage after recording is done
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => TrimmerView(file: File(pickedFile.path)),
+          builder: (context) => TrimmerView(file: File(videoPath)),
         ),
       );
+    } else {
+      print('No video selected.');
     }
   }
 
-  
   @override
   void dispose() {
     _videoController?.dispose();
     super.dispose();
   }
 
+  Future<void> _pickVideo() async {
+    final picker = ImagePicker();
+    late final XFile? pickedFile;
+
+    if (kIsWeb) {
+      // Web platform
+      pickedFile = await picker.pickVideo(source: ImageSource.gallery);
+    } else if (Platform.isIOS) {
+      // iOS platform
+      pickedFile = await picker.pickVideo(source: ImageSource.gallery);
+    } else {
+      // Android platform
+      pickedFile = await picker.pickVideo(source: ImageSource.gallery);
+    }
+
+    if (pickedFile != null) {
+      setState(() {
+        _file = File(pickedFile!.path);
+      });
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => TrimmerView(file: _file!),
+        ),
+      );
+    } else {
+      print('No video selected.');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -85,23 +118,7 @@ VideoPlayerController? _videoController;
                           borderRadius: BorderRadius.circular(10.0),
                         ),
                         child: ElevatedButton(
-                          onPressed: () async {
-                            final file = await ImagePicker()
-                                .pickVideo(source: ImageSource.gallery);
-                            if (file != null) {
-                              setState(() {
-                                _file = File(file.path);
-                              });
-
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      TrimmerView(file: _file!),
-                                ),
-                              );
-                            }
-                          },
+                          onPressed: _pickVideo,
                           style: ElevatedButton.styleFrom(
                             primary: Colors.black,
                             elevation: 0.0,
@@ -129,7 +146,7 @@ VideoPlayerController? _videoController;
                           borderRadius: BorderRadius.circular(10.0),
                         ),
                         child: ElevatedButton(
-                          onPressed:_openCamera,
+                          onPressed: _openCamera,
                           style: ElevatedButton.styleFrom(
                             primary: Colors.black,
                             elevation: 0.0,
@@ -148,8 +165,6 @@ VideoPlayerController? _videoController;
                         ),
                       ),
                     ),
-                     
-
                   ],
                 ),
               ),
