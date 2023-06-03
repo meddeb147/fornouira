@@ -1,9 +1,16 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:speech_to_text/speech_to_text.dart';
+
 import 'package:avatar_glow/avatar_glow.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 
+
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(MyApp());
+}
 
 
 class MyApp extends StatelessWidget {
@@ -26,26 +33,21 @@ class CardPage extends StatefulWidget {
 }
 
 class _CardPageState extends State<CardPage> {
-  SpeechToText speechToText = SpeechToText();
+  
   String textFieldValue = '';
   int value = 0;
   List<Widget> cards = [];
- 
 
   @override
   void initState() {
     super.initState();
-    _addCard(); 
-    speechToText.initialize(onStatus: (status) {
-print('status: $status');
-}, onError: (error) {
-print('error: $error');
-});// Add initial card when the page is first opened
+    _addCard();
+    
   }
 
   void _addCard() {
     setState(() {
-      int initialValue = (cards.length) * 30; // Calculate initial value based on card index
+      int initialValue = cards.length * 30; // Calculate initial value based on card index
       cards.add(_buildCustomCard(cards.length, initialValue));
     });
   }
@@ -58,16 +60,10 @@ print('error: $error');
           textFieldValue = value;
         });
       },
-      
       initialValue: initialValue,
     );
   }
 
- 
-
-  void _startListening() {
-    // Implement speech-to-text functionality here
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -87,6 +83,7 @@ print('error: $error');
     );
   }
 }
+
 class CustomCard extends StatefulWidget {
   final String textFieldValue;
   final Function(String) onTextChanged;
@@ -101,14 +98,17 @@ class CustomCard extends StatefulWidget {
   @override
   _CustomCardState createState() => _CustomCardState();
 }
+
 class _CustomCardState extends State<CustomCard> {
   int value = 0;
-  SpeechToText speechToText = SpeechToText();
+  late stt.SpeechToText _speech;
   String recognizedSpeech = '';
+  
 
   @override
   void initState() {
     super.initState();
+    _speech = stt.SpeechToText();
     value = widget.initialValue;
   }
 
@@ -196,7 +196,7 @@ class _CustomCardState extends State<CustomCard> {
                 SizedBox(width: 20.0), // Add a space between the buttons and the mic icon
                 AvatarGlow(
                   endRadius: 20.0,
-                  animate: speechToText.isListening,
+                  animate: _speech.isListening,
                   duration: Duration(milliseconds: 500),
                   glowColor: Color.fromARGB(255, 12, 76, 37),
                   repeat: true,
@@ -204,8 +204,8 @@ class _CustomCardState extends State<CustomCard> {
                   showTwoGlows: true,
                   child: GestureDetector(
                     onTapDown: (details) async {
-                      if (!speechToText.isListening) {
-                        var available = await speechToText.initialize(
+                      if (!_speech.isListening) {
+                        bool available = await _speech.initialize(
                           onStatus: (status) {
                             print('status: $status');
                           },
@@ -215,14 +215,14 @@ class _CustomCardState extends State<CustomCard> {
                         );
                         if (available) {
                           setState(() {
-                            speechToText.listen(
+                            _speech.listen(
                               onResult: (result) {
                                 setState(() {
                                   recognizedSpeech = result.recognizedWords;
                                   print(recognizedSpeech);
                                 });
                               },
-                              localeId: 'en-US',
+                              
                             );
                           });
                         }
@@ -230,7 +230,7 @@ class _CustomCardState extends State<CustomCard> {
                     },
                     onTapUp: (details) async {
                       setState(() {
-                        speechToText.stop();
+                        _speech.stop();
                       });
                     },
                     child: CircleAvatar(
@@ -248,3 +248,4 @@ class _CustomCardState extends State<CustomCard> {
     );
   }
 }
+
